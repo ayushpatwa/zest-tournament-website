@@ -1,12 +1,14 @@
 /* ==========================================================================
-   ZEST TOURNAMENT - RESPONSIVE STYLES
+   ZEST TOURNAMENT - MOBILE FIRST RESPONSIVE SYSTEM
+   Optimized for all mobile viewports (iOS, Android, Small to Large screens)
    ========================================================================== */
 
+/* --- TABLETS & MEDIUM SCREENS (<= 1024px) --- */
 @media (max-width: 1024px) {
   .hero-grid {
     grid-template-columns: 1fr;
     text-align: center;
-    gap: 40px;
+    gap: 36px;
   }
 
   .hero-description {
@@ -14,26 +16,19 @@
     margin-right: auto;
   }
 
-  .hero-cta-group {
-    justify-content: center;
-  }
-
-  .hero-stats-strip {
-    justify-content: center;
-  }
-
   .hero-media-wrapper {
-    max-width: 580px;
+    max-width: 520px;
     margin: 0 auto;
   }
 
   .phone-showcase-grid {
     grid-template-columns: 1fr;
-    gap: 40px;
+    gap: 36px;
   }
 
   .phone-mockup-frame {
     order: -1;
+    max-width: 300px;
   }
 
   .footer-grid {
@@ -42,13 +37,69 @@
   }
 }
 
+/* --- MOBILE & SMALL SCREENS (<= 768px) --- */
 @media (max-width: 768px) {
   :root {
-    --header-height: 68px;
+    --header-height: 60px;
   }
 
-  .section {
-    padding: 60px 0;
+  body {
+    overflow-x: hidden;
+  }
+
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Header & Navigation */
+  .site-header {
+    height: var(--header-height);
+  }
+
+  .logo-brand {
+    font-size: 1.25rem;
+    gap: 8px;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+  }
+
+  .logo-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  /* Hide QR Code button on mobile devices (already on phone) */
+  .header-qr-btn {
+    display: none !important;
+  }
+
+  .header-download-btn {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
+    gap: 6px !important;
+  }
+
+  .mobile-toggle {
+    display: flex !important;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+  }
+
+  .mobile-toggle svg {
+    width: 20px;
+    height: 20px;
   }
 
   .nav-links {
@@ -59,75 +110,440 @@
     background: rgba(9, 12, 18, 0.98);
     backdrop-filter: blur(20px);
     flex-direction: column;
-    padding: 24px;
-    gap: 20px;
+    padding: 20px 24px;
+    gap: 16px;
     border-bottom: 1px solid var(--border-subtle);
     transform: translateY(-150%);
     transition: transform var(--transition-normal);
+    z-index: 999;
   }
 
   .nav-links.active {
     transform: translateY(0);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
   }
 
-  .mobile-toggle {
+  .nav-link {
+    font-size: 1.05rem;
+    padding: 8px 0;
+    width: 100%;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  /* Hero Section Mobile Optimization */
+  .hero-section {
+    padding: 20px 0 35px;
+  }
+
+  .hero-grid {
+    gap: 26px;
+  }
+
+  .hero-tag {
+    font-size: 0.72rem;
+    padding: 4px 12px;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    line-height: 1.3;
+    max-width: 100%;
+  }
+
+  .hero-title {
+    font-size: clamp(1.75rem, 6.8vw, 2.3rem);
+    line-height: 1.12;
+    margin-bottom: 12px;
+    letter-spacing: 0;
+  }
+
+  .hero-description {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    max-width: 95%;
+  }
+
+  /* 3-Platform Buttons System Mobile */
+  .platform-cta-container {
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .platform-cta-grid {
     display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
-  .tournaments-grid {
-    grid-template-columns: 1fr;
+  .platform-btn {
+    padding: 11px 14px;
+    border-radius: var(--radius-md);
+    gap: 12px;
   }
 
+  .platform-btn .platform-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+  }
+
+  .platform-btn .platform-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .platform-btn .platform-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.5px;
+  }
+
+  .platform-btn .platform-title {
+    font-size: 1.05rem;
+  }
+
+  .platform-btn .platform-sub {
+    font-size: 0.72rem;
+  }
+
+  .platform-secondary-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .platform-secondary-actions .btn {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+
+  /* Compact 3-Column Stats Strip */
+  .hero-stats-strip {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+    padding: 12px 8px !important;
+    background: rgba(16, 21, 34, 0.75);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    text-align: center;
+    border-top: none !important;
+  }
+
+  .stat-item {
+    padding: 4px;
+  }
+
+  .stat-value {
+    font-size: 1.25rem !important;
+    line-height: 1.1;
+  }
+
+  .stat-label {
+    font-size: 0.65rem !important;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+  }
+
+  .hero-banner-card {
+    transform: none !important;
+    border-radius: var(--radius-lg);
+  }
+
+  .floating-badge {
+    display: none !important;
+  }
+
+  /* General Section Padding */
+  .section {
+    padding: 45px 0;
+  }
+
+  .section-head {
+    margin-bottom: 26px;
+  }
+
+  .section-tag {
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+
+  .section-title {
+    font-size: 1.65rem;
+    line-height: 1.2;
+  }
+
+  .section-subtitle {
+    font-size: 0.86rem;
+    margin-top: 8px;
+  }
+
+  /* Tournament Filters & Search */
   .tournament-filter-bar {
     flex-direction: column;
     align-items: stretch;
+    padding: 8px;
+    gap: 10px;
+    border-radius: var(--radius-md);
   }
 
   .filter-tabs {
+    display: flex;
+    gap: 6px;
     overflow-x: auto;
-    padding-bottom: 6px;
+    width: 100%;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     flex-wrap: nowrap;
   }
 
-  .hero-stats-strip {
-    flex-direction: column;
+  .filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-tab-btn {
+    padding: 7px 12px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+  }
+
+  .tournament-search-box {
+    width: 100%;
+    min-width: unset;
+    padding: 7px 12px;
+  }
+
+  /* Tournaments Grid & Cards */
+  .tournaments-grid {
+    grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .tournament-card {
+    border-radius: var(--radius-md);
+  }
+
+  .card-header-banner {
+    padding: 12px 16px;
+  }
+
+  .game-mode-tag {
+    font-size: 0.82rem;
+  }
+
+  .card-body {
+    padding: 16px;
+  }
+
+  .match-title {
+    font-size: 1.15rem;
+    margin-bottom: 12px;
+  }
+
+  .match-meta-grid {
+    padding: 10px;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .meta-lbl {
+    font-size: 0.72rem;
+  }
+
+  .meta-val {
+    font-size: 1rem;
+  }
+
+  .card-footer {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .card-footer .match-time-tag {
+    justify-content: center;
+    font-size: 0.82rem;
+  }
+
+  .card-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Feature Showcase */
+  .phone-mockup-frame {
+    max-width: 250px;
+    border-radius: 28px;
+    padding: 8px;
+  }
+
+  .phone-screen-img {
+    border-radius: 20px;
+  }
+
+  .feature-cards-col {
+    gap: 14px;
+  }
+
+  .feature-card {
+    padding: 16px;
+    gap: 14px;
+    border-radius: var(--radius-md);
+  }
+
+  .feature-card:hover {
+    transform: none;
+  }
+
+  .feature-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-sm);
+  }
+
+  .feature-icon-box svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .feature-card-content h3 {
+    font-size: 1.1rem;
+  }
+
+  .feature-card-content p {
+    font-size: 0.84rem;
+  }
+
+  /* How to Play Steps */
+  .steps-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .step-card {
+    padding: 22px 18px;
+    border-radius: var(--radius-md);
+  }
+
+  .step-number {
+    font-size: 2.6rem;
+    top: 12px;
+    right: 16px;
+  }
+
+  .step-card h3 {
+    font-size: 1.15rem;
+    margin: 12px 0 6px;
+  }
+
+  .step-card p {
+    font-size: 0.86rem;
+  }
+
+  /* Leaderboard Table Mobile Responsive */
+  .leaderboard-container {
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .leaderboard-table th,
+  .leaderboard-table td {
+    padding: 12px 10px;
+    font-size: 0.84rem;
+    white-space: nowrap;
+  }
+
+  .player-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  /* Modals on Mobile */
+  .modal-dialog {
+    max-width: 95%;
+    margin: 10px;
+    border-radius: var(--radius-lg);
+  }
+
+  .modal-header {
+    padding: 14px 18px;
+  }
+
+  .modal-title {
+    font-size: 1.15rem;
+  }
+
+  .modal-body {
+    padding: 16px;
+    max-height: 80vh;
+  }
+
+  .modal-footer {
+    padding: 12px 16px;
+    flex-direction: column;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+
+  /* Footer on Mobile */
+  .site-footer {
+    padding: 45px 0 24px;
+    margin-top: 30px;
   }
 
   .footer-grid {
     grid-template-columns: 1fr;
+    gap: 26px;
+    margin-bottom: 30px;
+  }
+
+  .footer-col h4 {
+    margin-bottom: 12px;
+    font-size: 1.05rem;
   }
 
   .footer-bottom {
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
     text-align: center;
+    font-size: 0.8rem;
+  }
+
+  .footer-socials {
+    justify-content: flex-start;
   }
 }
 
-@media (max-width: 480px) {
-  .hero-title {
-    font-size: 2.3rem;
+/* --- ULTRA-SMALL SCREENS (<= 380px iPhone SE / Folded screens) --- */
+@media (max-width: 380px) {
+  .logo-brand {
+    font-size: 1.1rem;
   }
 
-  .platform-cta-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
+  .hero-title {
+    font-size: 1.6rem;
   }
 
   .platform-btn {
-    padding: 12px 16px;
+    padding: 9px 12px;
   }
 
-  .platform-secondary-actions {
-    justify-content: center;
+  .platform-btn .platform-title {
+    font-size: 0.95rem;
   }
 
-  .floating-badge {
-    display: none;
+  .stat-value {
+    font-size: 1.1rem !important;
   }
 
-  .btn-lg {
-    width: 100%;
+  .stat-label {
+    font-size: 0.6rem !important;
   }
 }

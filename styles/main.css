@@ -224,11 +224,13 @@ ul {
 .logo-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-family: var(--font-heading);
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .logo-icon {
