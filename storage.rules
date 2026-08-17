@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Allow public read and write access permanently for APKs, iOS files and assets
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+    
+    // Dedicated rule for APK downloads folder
+    match /apks/{allPaths=**} {
+      allow read, write: if true;
+    }
+
+    // Dedicated rule for iOS packages folder
+    match /ios/{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}
