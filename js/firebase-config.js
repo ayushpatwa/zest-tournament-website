@@ -19,15 +19,15 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
-// Official Firebase configuration
+// Official Firebase configuration (Project: zest-tournament-website-f7498)
 const firebaseConfig = {
-  apiKey: "AIzaSyDrWAfCQp3NtItrY7aFaaOa3OysbeuQY7U",
-  authDomain: "zest-tournament-website.firebaseapp.com",
-  projectId: "zest-tournament-website",
-  storageBucket: "zest-tournament-website.firebasestorage.app",
-  messagingSenderId: "265768396141",
-  appId: "1:265768396141:web:82e43353ee8e8c224ea664",
-  measurementId: "G-4PSM7BQ3KN"
+  apiKey: "AIzaSyD3hrWMbmQHWLbs8Vd601a62nQiJm0DKxk",
+  authDomain: "zest-tournament-website-f7498.firebaseapp.com",
+  projectId: "zest-tournament-website-f7498",
+  storageBucket: "zest-tournament-website-f7498.firebasestorage.app",
+  messagingSenderId: "430092445826",
+  appId: "1:430092445826:web:f2d65e7f05136d2f3bac9b",
+  measurementId: "G-9FZM74RYYR"
 };
 
 // Initialize Firebase App
