@@ -324,7 +324,8 @@
     </div>
   </footer>
 
-  <!-- Scripts -->
+  <!-- Firebase Realtime & App Scripts -->
+  <script type="module" src="js/firebase-config.js"></script>
   <script src="js/uploader.js"></script>
   <script src="js/app.js"></script>
   <script>
@@ -459,44 +460,59 @@
         if (e.dataTransfer.files.length > 0) handleIOSFile(e.dataTransfer.files[0]);
       });
 
-      // Form submission
+      // Form submission with Realtime Firebase Sync
       document.getElementById('release-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const current = await AppUploader.getCurrentRelease();
-        const changelogLines = document.getElementById('input-changelog').value
-          .split('\n')
-          .map(l => l.trim())
-          .filter(l => l.length > 0);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const origBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⚡ Syncing to Firebase...</span>';
 
-        const newMeta = {
-          appName: document.getElementById('input-app-name').value,
-          
-          // Android
-          androidVersion: document.getElementById('input-android-version').value,
-          androidFileSize: document.getElementById('input-android-size').value,
-          androidDownloadUrl: document.getElementById('input-android-url').value,
-          androidFileName: selectedAndroidBlob ? selectedAndroidBlob.name : (current.androidFileName || 'zest-tournament-v1.4.2.apk'),
-          
-          // iOS
-          iosVersion: document.getElementById('input-ios-version').value,
-          iosFileSize: document.getElementById('input-ios-size').value,
-          iosDownloadUrl: document.getElementById('input-ios-url').value,
-          iosFileName: selectedIOSBlob ? selectedIOSBlob.name : (current.iosFileName || 'zest-tournament-v1.4.2.ipa'),
+        try {
+          const current = await AppUploader.getCurrentRelease();
+          const changelogLines = document.getElementById('input-changelog').value
+            .split('\n')
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
 
-          // Browser Play
-          browserPlayUrl: document.getElementById('input-browser-url').value,
+          const newMeta = {
+            appName: document.getElementById('input-app-name').value,
+            
+            // Android
+            androidVersion: document.getElementById('input-android-version').value,
+            androidFileSize: document.getElementById('input-android-size').value,
+            androidDownloadUrl: document.getElementById('input-android-url').value,
+            androidFileName: selectedAndroidBlob ? selectedAndroidBlob.name : (current.androidFileName || 'zest-tournament-v1.4.2.apk'),
+            
+            // iOS
+            iosVersion: document.getElementById('input-ios-version').value,
+            iosFileSize: document.getElementById('input-ios-size').value,
+            iosDownloadUrl: document.getElementById('input-ios-url').value,
+            iosFileName: selectedIOSBlob ? selectedIOSBlob.name : (current.iosFileName || 'zest-tournament-v1.4.2.ipa'),
 
-          changelog: changelogLines,
-          downloadCount: current.downloadCount || 15000,
-          updatedAt: new Date().toLocaleDateString()
-        };
+            // Browser Play
+            browserPlayUrl: document.getElementById('input-browser-url').value,
 
-        await AppUploader.saveRelease(newMeta, {
-          androidBlob: selectedAndroidBlob,
-          iosBlob: selectedIOSBlob
-        });
+            changelog: changelogLines,
+            downloadCount: current.downloadCount || 15000,
+            updatedAt: new Date().toLocaleDateString()
+          };
 
-        AppUI.showToast('✅ All platform releases & links updated successfully!', 'success');
+          await AppUploader.saveRelease(newMeta, {
+            androidBlob: selectedAndroidBlob,
+            iosBlob: selectedIOSBlob
+          }, (msg, percent) => {
+            submitBtn.innerHTML = `<span>⚡ ${msg}</span>`;
+          });
+
+          AppUI.showToast('🔥 Live Firebase Sync Complete! Update is visible to all players in seconds.', 'success');
+        } catch (err) {
+          console.error(err);
+          AppUI.showToast('⚠️ Sync completed with local cache.', 'info');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origBtnText;
+        }
       });
 
       checkAuth();

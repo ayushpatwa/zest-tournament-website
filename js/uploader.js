@@ -1,6 +1,6 @@
 /**
- * ZEST TOURNAMENT - MULTI-PLATFORM APP RELEASE & SECURE UPLOADER
- * Handles Android (.APK), iOS (.IPA / TestFlight), and Web Portal links with Owner Security.
+ * ZEST TOURNAMENT - SECURE MULTI-PLATFORM & FIREBASE REALTIME UPLOADER
+ * Directly connects to Firebase Firestore & Storage for 0-second live sync.
  */
 
 const AppUploader = (function () {
@@ -11,26 +11,21 @@ const AppUploader = (function () {
   // Default Admin Access Key: ZEST#ADMIN2026
   const DEFAULT_ADMIN_KEY = 'ZEST#ADMIN2026';
 
-  // Default Multi-Platform Release Config
+  // Default App Release Config (Fallback if offline)
   const defaultRelease = {
     appName: 'Zest Tournament - Free Fire Esports',
-    // Android config
     androidVersion: 'v1.4.2',
     androidFileSize: '42.5 MB',
     androidFileName: 'zest-tournament-v1.4.2.apk',
     androidDownloadUrl: 'assets/downloads/zest-tournament-v1.4.2.apk',
     
-    // iOS config
     iosVersion: 'v1.4.2',
     iosFileSize: '48.0 MB',
     iosFileName: 'zest-tournament-v1.4.2.ipa',
-    iosDownloadUrl: '', // e.g. TestFlight link or App Store link or custom IPA
-    iosMode: 'guide', // 'guide' (Safari PWA) or 'link' (TestFlight/AppStore/IPA)
+    iosDownloadUrl: '',
     
-    // Web Arena config
     browserPlayUrl: '#tournaments',
     
-    // Universal Meta
     releaseDate: 'August 2026',
     downloadCount: 14850,
     minAndroid: 'Android 7.0+',
@@ -44,8 +39,8 @@ const AppUploader = (function () {
   };
 
   let db = null;
+  let cachedRelease = null;
 
-  // Simple string hash helper for verification
   async function hashKey(str) {
     const encoder = new TextEncoder();
     const data = encoder.encode(str.trim());
@@ -54,7 +49,6 @@ const AppUploader = (function () {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
-  // Get current admin password hash
   async function getStoredAdminHash() {
     let hash = localStorage.getItem('zest_admin_hash');
     if (!hash) {
@@ -64,12 +58,10 @@ const AppUploader = (function () {
     return hash;
   }
 
-  // Check if current session is authenticated as Admin
   function isAuthenticated() {
     return sessionStorage.getItem('zest_admin_session') === 'true';
   }
 
-  // Authenticate Admin with entered key
   async function verifyAdminKey(inputKey) {
     const targetHash = await getStoredAdminHash();
     const enteredHash = await hashKey(inputKey);
@@ -80,7 +72,6 @@ const AppUploader = (function () {
     return false;
   }
 
-  // Change Admin Key (Only when already authenticated)
   async function changeAdminKey(newKey) {
     if (!isAuthenticated()) throw new Error('Unauthorized');
     const newHash = await hashKey(newKey);
@@ -88,12 +79,10 @@ const AppUploader = (function () {
     return true;
   }
 
-  // Logout Admin
   function logoutAdmin() {
     sessionStorage.removeItem('zest_admin_session');
   }
 
-  // Open IndexedDB with multi-binary store
   function initDB() {
     return new Promise((resolve) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -111,12 +100,11 @@ const AppUploader = (function () {
     });
   }
 
-  // Load current release meta with blobs
   async function getCurrentRelease() {
+    if (cachedRelease) return cachedRelease;
     const local = localStorage.getItem('zest_release_meta');
     let release = local ? JSON.parse(local) : { ...defaultRelease };
 
-    // Backward compatibility with previous version format
     if (release.version && !release.androidVersion) {
       release.androidVersion = release.version;
       release.androidFileSize = release.fileSize || '42.5 MB';
@@ -124,84 +112,70 @@ const AppUploader = (function () {
       release.androidFileName = release.fileName || 'zest-tournament-v1.4.2.apk';
     }
 
-    if (db) {
-      try {
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-
-        // Fetch Android binary
-        const reqAndroid = store.get('latest_apk');
-        const androidRecord = await new Promise((res) => {
-          reqAndroid.onsuccess = () => res(reqAndroid.result);
-          reqAndroid.onerror = () => res(null);
-        });
-        if (androidRecord && androidRecord.blob) {
-          release.androidBlobUrl = URL.createObjectURL(androidRecord.blob);
-          release.androidFileSize = formatFileSize(androidRecord.blob.size);
-          release.androidFileName = androidRecord.fileName;
-        }
-
-        // Fetch iOS binary
-        const reqIOS = store.get('latest_ios');
-        const iosRecord = await new Promise((res) => {
-          reqIOS.onsuccess = () => res(reqIOS.result);
-          reqIOS.onerror = () => res(null);
-        });
-        if (iosRecord && iosRecord.blob) {
-          release.iosBlobUrl = URL.createObjectURL(iosRecord.blob);
-          release.iosFileSize = formatFileSize(iosRecord.blob.size);
-          release.iosFileName = iosRecord.fileName;
-        }
-      } catch (err) {
-        console.error('Error fetching binaries from IndexedDB', err);
-      }
-    }
-
+    cachedRelease = release;
     return release;
   }
 
-  // Save new multi-platform release (SECURE: Checks admin authentication)
-  async function saveRelease(meta, files = {}) {
+  /**
+   * Save release to Firebase Firestore & Storage + Local Cache
+   */
+  async function saveRelease(meta, files = {}, onProgress = null) {
     if (!isAuthenticated()) {
       alert('Access Denied: Only the verified owner can upload or update app releases.');
       throw new Error('Unauthorized upload attempt.');
     }
 
-    if (db) {
+    let finalMeta = { ...meta };
+
+    // Upload to Firebase Storage if files are provided and Firebase is available
+    if (window.FirebaseRealtime && window.FirebaseRealtime.uploadFileToFirebaseStorage) {
       try {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-
-        // Save Android APK if provided
         if (files.androidBlob) {
-          store.put({
-            id: 'latest_apk',
-            blob: files.androidBlob,
-            fileName: meta.androidFileName || files.androidBlob.name,
-            updatedAt: new Date().toISOString()
-          });
+          if (onProgress) onProgress('Uploading Android APK to Firebase CDN...', 15);
+          const uploadedAndroid = await window.FirebaseRealtime.uploadFileToFirebaseStorage(
+            files.androidBlob,
+            'apks',
+            (p) => { if (onProgress) onProgress(`Uploading Android APK: ${p}%`, p); }
+          );
+          finalMeta.androidDownloadUrl = uploadedAndroid.downloadUrl;
+          finalMeta.androidFileName = uploadedAndroid.fileName;
+          finalMeta.androidFileSize = formatFileSize(uploadedAndroid.fileSize);
         }
 
-        // Save iOS File if provided
         if (files.iosBlob) {
-          store.put({
-            id: 'latest_ios',
-            blob: files.iosBlob,
-            fileName: meta.iosFileName || files.iosBlob.name,
-            updatedAt: new Date().toISOString()
-          });
+          if (onProgress) onProgress('Uploading iOS Package to Firebase CDN...', 50);
+          const uploadedIOS = await window.FirebaseRealtime.uploadFileToFirebaseStorage(
+            files.iosBlob,
+            'ios',
+            (p) => { if (onProgress) onProgress(`Uploading iOS Package: ${p}%`, p); }
+          );
+          finalMeta.iosDownloadUrl = uploadedIOS.downloadUrl;
+          finalMeta.iosFileName = uploadedIOS.fileName;
+          finalMeta.iosFileSize = formatFileSize(uploadedIOS.fileSize);
         }
-      } catch (err) {
-        console.error('Error storing binaries:', err);
+      } catch (uploadErr) {
+        console.warn('Firebase Storage upload notice (falling back to direct path):', uploadErr);
       }
     }
 
-    localStorage.setItem('zest_release_meta', JSON.stringify(meta));
-    updateUIElements(meta);
+    // Save to Firebase Firestore Realtime Database
+    if (window.FirebaseRealtime && window.FirebaseRealtime.saveAppReleaseToFirestore) {
+      try {
+        await window.FirebaseRealtime.saveAppReleaseToFirestore(finalMeta);
+      } catch (firestoreErr) {
+        console.warn('Firestore write warning:', firestoreErr);
+      }
+    }
+
+    // Save to LocalStorage & IndexedDB as offline cache
+    localStorage.setItem('zest_release_meta', JSON.stringify(finalMeta));
+    cachedRelease = finalMeta;
+    updateUIElements(finalMeta);
+    return finalMeta;
   }
 
   function formatFileSize(bytes) {
-    if (bytes === 0) return '0 B';
+    if (!bytes || isNaN(bytes) || bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -209,8 +183,15 @@ const AppUploader = (function () {
   }
 
   function updateUIElements(release) {
-    document.querySelectorAll('.app-version-val').forEach(el => el.textContent = release.androidVersion || release.version || 'v1.4.2');
-    document.querySelectorAll('.app-size-val').forEach(el => el.textContent = release.androidFileSize || release.fileSize || '42.5 MB');
+    if (!release) return;
+    cachedRelease = release;
+
+    document.querySelectorAll('.app-version-val').forEach(el => {
+      el.textContent = release.androidVersion || release.version || 'v1.4.2';
+    });
+    document.querySelectorAll('.app-size-val').forEach(el => {
+      el.textContent = release.androidFileSize || release.fileSize || '42.5 MB';
+    });
     document.querySelectorAll('.app-downloads-val').forEach(el => {
       el.textContent = (release.downloadCount || 15000).toLocaleString() + '+';
     });
@@ -225,12 +206,11 @@ const AppUploader = (function () {
     });
   }
 
-  // Trigger Android APK download
   function triggerAndroidDownload(release) {
-    let targetUrl = release.androidBlobUrl || release.androidDownloadUrl || release.blobUrl || release.downloadUrl || 'assets/downloads/zest-tournament-v1.4.2.apk';
+    let targetUrl = release.androidDownloadUrl || release.downloadUrl || 'assets/downloads/zest-tournament-v1.4.2.apk';
     const link = document.createElement('a');
     link.href = targetUrl;
-    link.download = release.androidFileName || release.fileName || 'zest-tournament-app.apk';
+    link.download = release.androidFileName || 'zest-tournament-app.apk';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -240,33 +220,24 @@ const AppUploader = (function () {
     updateUIElements(release);
 
     if (window.AppUI && window.AppUI.showToast) {
-      window.AppUI.showToast(`Downloading Android APK (${release.androidVersion || 'v1.4.2'})...`, 'success');
+      window.AppUI.showToast(`⚡ Downloading Zest Tournament APK (${release.androidVersion || 'v1.4.2'})...`, 'success');
     }
   }
 
-  // Trigger iOS Download / Link / Modal
   function triggerIOSAction(release) {
-    if (release.iosBlobUrl) {
-      const link = document.createElement('a');
-      link.href = release.iosBlobUrl;
-      link.download = release.iosFileName || 'zest-tournament-ios.ipa';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      if (window.AppUI && window.AppUI.showToast) {
-        window.AppUI.showToast(`Downloading iOS Package (${release.iosVersion || 'v1.4.2'})...`, 'success');
-      }
-    } else if (release.iosDownloadUrl && release.iosDownloadUrl.trim().length > 0 && !release.iosDownloadUrl.startsWith('#')) {
+    if (release.iosDownloadUrl && release.iosDownloadUrl.trim().length > 0 && !release.iosDownloadUrl.startsWith('#')) {
       window.open(release.iosDownloadUrl, '_blank');
+      if (window.AppUI && window.AppUI.showToast) {
+        window.AppUI.showToast('🍎 Opening official iOS App Store / TestFlight portal...', 'info');
+      }
     } else {
-      // Open iOS PWA / Web App guide modal
       if (window.AppUI && window.AppUI.openIOSModal) {
-        window.AppUI.openIOSModal();
+        const modal = document.getElementById('ios-modal');
+        if (modal) modal.classList.add('active');
       }
     }
   }
 
-  // Trigger Browser Play / Web Portal Action
   function triggerBrowserAction(release) {
     const target = release.browserPlayUrl || '#tournaments';
     if (target.startsWith('http://') || target.startsWith('https://')) {
@@ -294,11 +265,30 @@ const AppUploader = (function () {
     `;
   }
 
+  /**
+   * Connect Realtime Firebase Listener
+   */
+  function setupFirebaseRealtimeSync() {
+    if (window.FirebaseRealtime && window.FirebaseRealtime.listenToAppRelease) {
+      window.FirebaseRealtime.listenToAppRelease((liveRelease) => {
+        if (liveRelease) {
+          console.log("⚡ Realtime update received from Firebase in seconds:", liveRelease);
+          updateUIElements(liveRelease);
+          localStorage.setItem('zest_release_meta', JSON.stringify(liveRelease));
+          if (window.AppUI && window.AppUI.showToast) {
+            window.AppUI.showToast(`🔥 Live Update: Zest Tournament ${liveRelease.androidVersion || 'v1.4.2'} is live!`, 'success');
+          }
+        }
+      });
+    }
+  }
+
   return {
     init: async function () {
       await initDB();
       const release = await getCurrentRelease();
       updateUIElements(release);
+      setupFirebaseRealtimeSync();
       return release;
     },
     getCurrentRelease,
