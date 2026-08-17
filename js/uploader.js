@@ -154,7 +154,35 @@ const AppUploader = (function () {
           finalMeta.iosFileSize = formatFileSize(uploadedIOS.fileSize);
         }
       } catch (uploadErr) {
-        console.warn('Firebase Storage upload notice (falling back to direct path):', uploadErr);
+        console.warn('Firebase Storage upload notice (falling back to IndexedDB/Direct download):', uploadErr);
+      }
+    }
+
+    // Save binary blobs to IndexedDB as bulletproof backup
+    if (db) {
+      try {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        if (files.androidBlob) {
+          store.put({
+            id: 'latest_apk',
+            blob: files.androidBlob,
+            fileName: finalMeta.androidFileName || files.androidBlob.name,
+            updatedAt: new Date().toISOString()
+          });
+          finalMeta.androidBlobUrl = URL.createObjectURL(files.androidBlob);
+        }
+        if (files.iosBlob) {
+          store.put({
+            id: 'latest_ios',
+            blob: files.iosBlob,
+            fileName: finalMeta.iosFileName || files.iosBlob.name,
+            updatedAt: new Date().toISOString()
+          });
+          finalMeta.iosBlobUrl = URL.createObjectURL(files.iosBlob);
+        }
+      } catch (idbErr) {
+        console.warn('IndexedDB write warning:', idbErr);
       }
     }
 
@@ -167,7 +195,7 @@ const AppUploader = (function () {
       }
     }
 
-    // Save to LocalStorage & IndexedDB as offline cache
+    // Save to LocalStorage as offline cache
     localStorage.setItem('zest_release_meta', JSON.stringify(finalMeta));
     cachedRelease = finalMeta;
     updateUIElements(finalMeta);
