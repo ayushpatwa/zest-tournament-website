@@ -324,8 +324,7 @@
     </div>
   </footer>
 
-  <!-- Firebase Realtime & App Scripts -->
-  <script type="module" src="js/firebase-config.js"></script>
+  <!-- App Scripts -->
   <script src="js/uploader.js"></script>
   <script src="js/app.js"></script>
   <script>
@@ -460,13 +459,13 @@
         if (e.dataTransfer.files.length > 0) handleIOSFile(e.dataTransfer.files[0]);
       });
 
-      // Form submission with Realtime Firebase Sync
+      // Form submission
       document.getElementById('release-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = e.target.querySelector('button[type="submit"]');
         const origBtnText = submitBtn.innerHTML;
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span>⚡ Syncing to Firebase...</span>';
+        submitBtn.innerHTML = '<span>Saving releases...</span>';
 
         try {
           const current = await AppUploader.getCurrentRelease();
@@ -501,14 +500,12 @@
           await AppUploader.saveRelease(newMeta, {
             androidBlob: selectedAndroidBlob,
             iosBlob: selectedIOSBlob
-          }, (msg, percent) => {
-            submitBtn.innerHTML = `<span>⚡ ${msg}</span>`;
           });
 
-          AppUI.showToast('🔥 Live Firebase Sync Complete! Update is visible to all players in seconds.', 'success');
+          AppUI.showToast('✅ All platform releases & links updated successfully!', 'success');
         } catch (err) {
           console.error(err);
-          AppUI.showToast('⚠️ Sync completed with local cache.', 'info');
+          AppUI.showToast('⚠️ Error saving release: ' + err.message, 'info');
         } finally {
           submitBtn.disabled = false;
           submitBtn.innerHTML = origBtnText;

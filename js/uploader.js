@@ -1,6 +1,7 @@
 /**
- * ZEST TOURNAMENT - SECURE MULTI-PLATFORM & FIREBASE REALTIME UPLOADER
- * Directly connects to Firebase Firestore & Storage for 0-second live sync.
+ * ZEST TOURNAMENT - MULTI-PLATFORM APP RELEASE & SECURE UPLOADER
+ * Standalone offline-ready architecture using IndexedDB & LocalStorage.
+ * No external database dependencies required.
  */
 
 const AppUploader = (function () {
@@ -11,7 +12,7 @@ const AppUploader = (function () {
   // Default Admin Access Key: ZEST#ADMIN2026
   const DEFAULT_ADMIN_KEY = 'ZEST#ADMIN2026';
 
-  // Default App Release Config (Fallback if offline)
+  // Default Multi-Platform Release Config
   const defaultRelease = {
     appName: 'Zest Tournament - Free Fire Esports',
     androidVersion: 'v1.4.2',
@@ -112,14 +113,42 @@ const AppUploader = (function () {
       release.androidFileName = release.fileName || 'zest-tournament-v1.4.2.apk';
     }
 
+    if (db) {
+      try {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+
+        const reqAndroid = store.get('latest_apk');
+        const androidRecord = await new Promise((res) => {
+          reqAndroid.onsuccess = () => res(reqAndroid.result);
+          reqAndroid.onerror = () => res(null);
+        });
+        if (androidRecord && androidRecord.blob) {
+          release.androidBlobUrl = URL.createObjectURL(androidRecord.blob);
+          release.androidFileSize = formatFileSize(androidRecord.blob.size);
+          release.androidFileName = androidRecord.fileName;
+        }
+
+        const reqIOS = store.get('latest_ios');
+        const iosRecord = await new Promise((res) => {
+          reqIOS.onsuccess = () => res(reqIOS.result);
+          reqIOS.onerror = () => res(null);
+        });
+        if (iosRecord && iosRecord.blob) {
+          release.iosBlobUrl = URL.createObjectURL(iosRecord.blob);
+          release.iosFileSize = formatFileSize(iosRecord.blob.size);
+          release.iosFileName = iosRecord.fileName;
+        }
+      } catch (err) {
+        console.error('Error reading from IndexedDB:', err);
+      }
+    }
+
     cachedRelease = release;
     return release;
   }
 
-  /**
-   * Save release to Firebase Firestore & Storage + Local Cache
-   */
-  async function saveRelease(meta, files = {}, onProgress = null) {
+  async function saveRelease(meta, files = {}) {
     if (!isAuthenticated()) {
       alert('Access Denied: Only the verified owner can upload or update app releases.');
       throw new Error('Unauthorized upload attempt.');
@@ -127,38 +156,7 @@ const AppUploader = (function () {
 
     let finalMeta = { ...meta };
 
-    // Upload to Firebase Storage if files are provided and Firebase is available
-    if (window.FirebaseRealtime && window.FirebaseRealtime.uploadFileToFirebaseStorage) {
-      try {
-        if (files.androidBlob) {
-          if (onProgress) onProgress('Uploading Android APK to Firebase CDN...', 15);
-          const uploadedAndroid = await window.FirebaseRealtime.uploadFileToFirebaseStorage(
-            files.androidBlob,
-            'apks',
-            (p) => { if (onProgress) onProgress(`Uploading Android APK: ${p}%`, p); }
-          );
-          finalMeta.androidDownloadUrl = uploadedAndroid.downloadUrl;
-          finalMeta.androidFileName = uploadedAndroid.fileName;
-          finalMeta.androidFileSize = formatFileSize(uploadedAndroid.fileSize);
-        }
-
-        if (files.iosBlob) {
-          if (onProgress) onProgress('Uploading iOS Package to Firebase CDN...', 50);
-          const uploadedIOS = await window.FirebaseRealtime.uploadFileToFirebaseStorage(
-            files.iosBlob,
-            'ios',
-            (p) => { if (onProgress) onProgress(`Uploading iOS Package: ${p}%`, p); }
-          );
-          finalMeta.iosDownloadUrl = uploadedIOS.downloadUrl;
-          finalMeta.iosFileName = uploadedIOS.fileName;
-          finalMeta.iosFileSize = formatFileSize(uploadedIOS.fileSize);
-        }
-      } catch (uploadErr) {
-        console.warn('Firebase Storage upload notice (falling back to IndexedDB/Direct download):', uploadErr);
-      }
-    }
-
-    // Save binary blobs to IndexedDB as bulletproof backup
+    // Save binary files directly into browser IndexedDB
     if (db) {
       try {
         const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -186,16 +184,6 @@ const AppUploader = (function () {
       }
     }
 
-    // Save to Firebase Firestore Realtime Database
-    if (window.FirebaseRealtime && window.FirebaseRealtime.saveAppReleaseToFirestore) {
-      try {
-        await window.FirebaseRealtime.saveAppReleaseToFirestore(finalMeta);
-      } catch (firestoreErr) {
-        console.warn('Firestore write warning:', firestoreErr);
-      }
-    }
-
-    // Save to LocalStorage as offline cache
     localStorage.setItem('zest_release_meta', JSON.stringify(finalMeta));
     cachedRelease = finalMeta;
     updateUIElements(finalMeta);
@@ -224,7 +212,6 @@ const AppUploader = (function () {
       el.textContent = (release.downloadCount || 15000).toLocaleString() + '+';
     });
 
-    // Android Download Triggers
     const downloadButtons = document.querySelectorAll('.dynamic-app-download');
     downloadButtons.forEach(btn => {
       btn.onclick = (e) => {
@@ -235,7 +222,7 @@ const AppUploader = (function () {
   }
 
   function triggerAndroidDownload(release) {
-    let targetUrl = release.androidDownloadUrl || release.downloadUrl || 'assets/downloads/zest-tournament-v1.4.2.apk';
+    let targetUrl = release.androidBlobUrl || release.androidDownloadUrl || release.downloadUrl || 'assets/downloads/zest-tournament-v1.4.2.apk';
     const link = document.createElement('a');
     link.href = targetUrl;
     link.download = release.androidFileName || 'zest-tournament-app.apk';
@@ -248,15 +235,25 @@ const AppUploader = (function () {
     updateUIElements(release);
 
     if (window.AppUI && window.AppUI.showToast) {
-      window.AppUI.showToast(`⚡ Downloading Zest Tournament APK (${release.androidVersion || 'v1.4.2'})...`, 'success');
+      window.AppUI.showToast(`Downloading Android APK (${release.androidVersion || 'v1.4.2'})...`, 'success');
     }
   }
 
   function triggerIOSAction(release) {
-    if (release.iosDownloadUrl && release.iosDownloadUrl.trim().length > 0 && !release.iosDownloadUrl.startsWith('#')) {
+    if (release.iosBlobUrl) {
+      const link = document.createElement('a');
+      link.href = release.iosBlobUrl;
+      link.download = release.iosFileName || 'zest-tournament-ios.ipa';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      if (window.AppUI && window.AppUI.showToast) {
+        window.AppUI.showToast(`Downloading iOS Package (${release.iosVersion || 'v1.4.2'})...`, 'success');
+      }
+    } else if (release.iosDownloadUrl && release.iosDownloadUrl.trim().length > 0 && !release.iosDownloadUrl.startsWith('#')) {
       window.open(release.iosDownloadUrl, '_blank');
       if (window.AppUI && window.AppUI.showToast) {
-        window.AppUI.showToast('🍎 Opening official iOS App Store / TestFlight portal...', 'info');
+        window.AppUI.showToast('🍎 Opening iOS App Store / TestFlight portal...', 'info');
       }
     } else {
       if (window.AppUI && window.AppUI.openIOSModal) {
@@ -293,30 +290,11 @@ const AppUploader = (function () {
     `;
   }
 
-  /**
-   * Connect Realtime Firebase Listener
-   */
-  function setupFirebaseRealtimeSync() {
-    if (window.FirebaseRealtime && window.FirebaseRealtime.listenToAppRelease) {
-      window.FirebaseRealtime.listenToAppRelease((liveRelease) => {
-        if (liveRelease) {
-          console.log("⚡ Realtime update received from Firebase in seconds:", liveRelease);
-          updateUIElements(liveRelease);
-          localStorage.setItem('zest_release_meta', JSON.stringify(liveRelease));
-          if (window.AppUI && window.AppUI.showToast) {
-            window.AppUI.showToast(`🔥 Live Update: Zest Tournament ${liveRelease.androidVersion || 'v1.4.2'} is live!`, 'success');
-          }
-        }
-      });
-    }
-  }
-
   return {
     init: async function () {
       await initDB();
       const release = await getCurrentRelease();
       updateUIElements(release);
-      setupFirebaseRealtimeSync();
       return release;
     },
     getCurrentRelease,
