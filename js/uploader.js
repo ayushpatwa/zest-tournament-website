@@ -103,14 +103,27 @@ const AppUploader = (function () {
 
   async function getCurrentRelease() {
     if (cachedRelease) return cachedRelease;
-    const local = localStorage.getItem('zest_release_meta');
-    let release = local ? JSON.parse(local) : { ...defaultRelease };
+    
+    let release = { ...defaultRelease };
 
-    if (release.version && !release.androidVersion) {
-      release.androidVersion = release.version;
-      release.androidFileSize = release.fileSize || '42.5 MB';
-      release.androidDownloadUrl = release.downloadUrl || 'assets/downloads/zest-tournament-v1.4.2.apk';
-      release.androidFileName = release.fileName || 'zest-tournament-v1.4.2.apk';
+    // 1. Fetch live global configuration from server (shared across all phones/devices)
+    try {
+      const res = await fetch('assets/config/release.json?t=' + Date.now());
+      if (res.ok) {
+        const json = await res.json();
+        release = { ...release, ...json };
+      }
+    } catch (netErr) {
+      console.warn('Network release.json fetch skipped, checking local storage:', netErr);
+    }
+
+    // 2. Overlay local storage if available
+    const local = localStorage.getItem('zest_release_meta');
+    if (local) {
+      try {
+        const localObj = JSON.parse(local);
+        release = { ...release, ...localObj };
+      } catch (e) {}
     }
 
     if (db) {
