@@ -18,7 +18,7 @@ const AppUploader = (function () {
     androidVersion: 'v1.4.2',
     androidFileSize: '42.5 MB',
     androidFileName: 'zest-tournament-v1.4.2.apk',
-    androidDownloadUrl: 'assets/downloads/zest-tournament-v1.4.2.apk',
+    androidDownloadUrl: 'https://pub-3a330a31e4904c16b9e08700204ffc7c.r2.dev/zest-tournament-v1.4.2.apk',
     
     iosVersion: 'v1.4.2',
     iosFileSize: '48.0 MB',
