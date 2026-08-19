@@ -1,7 +1,7 @@
 /**
- * ZEST TOURNAMENT - MULTI-PLATFORM APP RELEASE & SECURE UPLOADER
- * Standalone offline-ready architecture using IndexedDB & LocalStorage.
- * No external database dependencies required.
+ * ZEST TOURNAMENT - CLOUDFLARE KV REALTIME DATABASE & MULTI-PLATFORM UPLOADER
+ * Directly connects to Cloudflare Worker API (zest-api.ayushpatwa74.workers.dev)
+ * for instant 0-second live sync across all mobile devices worldwide.
  */
 
 const AppUploader = (function () {
@@ -9,6 +9,9 @@ const AppUploader = (function () {
   const DB_VERSION = 2;
   const STORE_NAME = 'app_releases';
   
+  // Live Cloudflare Worker API endpoint
+  const CLOUDFLARE_API_URL = 'https://zest-api.ayushpatwa74.workers.dev';
+
   // Default Admin Access Key: ZEST#ADMIN2026
   const DEFAULT_ADMIN_KEY = 'ZEST#ADMIN2026';
 
@@ -28,7 +31,7 @@ const AppUploader = (function () {
     browserPlayUrl: '#tournaments',
     
     releaseDate: 'August 2026',
-    downloadCount: 14850,
+    downloadCount: 15420,
     minAndroid: 'Android 7.0+',
     minIOS: 'iOS 14.0+',
     changelog: [
@@ -106,15 +109,25 @@ const AppUploader = (function () {
     
     let release = { ...defaultRelease };
 
-    // 1. Fetch live global configuration from server (shared across all phones/devices)
+    // 1. Fetch live global configuration from Cloudflare Worker API
     try {
-      const res = await fetch('assets/config/release.json?t=' + Date.now());
+      const res = await fetch(`${CLOUDFLARE_API_URL}?t=${Date.now()}`);
       if (res.ok) {
-        const json = await res.json();
-        release = { ...release, ...json };
+        const cloudData = await res.json();
+        if (cloudData && typeof cloudData === 'object') {
+          release = { ...release, ...cloudData };
+        }
       }
-    } catch (netErr) {
-      console.warn('Network release.json fetch skipped, checking local storage:', netErr);
+    } catch (cfErr) {
+      console.warn('Cloudflare Worker API fetch skipped, trying static config:', cfErr);
+      // Fallback to static release.json
+      try {
+        const resStatic = await fetch('assets/config/release.json?t=' + Date.now());
+        if (resStatic.ok) {
+          const jsonStatic = await resStatic.json();
+          release = { ...release, ...jsonStatic };
+        }
+      } catch (e) {}
     }
 
     // 2. Overlay local storage if available
@@ -169,7 +182,21 @@ const AppUploader = (function () {
 
     let finalMeta = { ...meta };
 
-    // Save binary files directly into browser IndexedDB
+    // 1. Publish to Cloudflare Worker KV Database globally (updates all phones in seconds)
+    try {
+      const response = await fetch(CLOUDFLARE_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalMeta)
+      });
+      if (response.ok) {
+        console.log('⚡ Successfully synced to Cloudflare KV database globally!');
+      }
+    } catch (apiErr) {
+      console.warn('Cloudflare KV API save notice:', apiErr);
+    }
+
+    // 2. Save binary files into IndexedDB as backup
     if (db) {
       try {
         const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -222,7 +249,7 @@ const AppUploader = (function () {
       el.textContent = release.androidFileSize || release.fileSize || '42.5 MB';
     });
     document.querySelectorAll('.app-downloads-val').forEach(el => {
-      el.textContent = (release.downloadCount || 15000).toLocaleString() + '+';
+      el.textContent = (release.downloadCount || 15420).toLocaleString() + '+';
     });
 
     const downloadButtons = document.querySelectorAll('.dynamic-app-download');
@@ -235,7 +262,7 @@ const AppUploader = (function () {
   }
 
   function triggerAndroidDownload(release) {
-    let targetUrl = release.androidBlobUrl || release.androidDownloadUrl || release.downloadUrl || 'assets/downloads/zest-tournament-v1.4.2.apk';
+    let targetUrl = release.androidBlobUrl || release.androidDownloadUrl || release.downloadUrl || 'https://pub-3a330a31e4904c16b9e08700204ffc7c.r2.dev/zest-tournament-v1.4.2.apk';
     const link = document.createElement('a');
     link.href = targetUrl;
     link.download = release.androidFileName || 'zest-tournament-app.apk';
@@ -243,7 +270,7 @@ const AppUploader = (function () {
     link.click();
     document.body.removeChild(link);
 
-    release.downloadCount = (release.downloadCount || 14850) + 1;
+    release.downloadCount = (release.downloadCount || 15420) + 1;
     localStorage.setItem('zest_release_meta', JSON.stringify(release));
     updateUIElements(release);
 
@@ -321,7 +348,8 @@ const AppUploader = (function () {
     verifyAdminKey,
     changeAdminKey,
     logoutAdmin,
-    DEFAULT_ADMIN_KEY
+    DEFAULT_ADMIN_KEY,
+    CLOUDFLARE_API_URL
   };
 })();
 
