@@ -19,9 +19,9 @@ const AppUploader = (function () {
   const defaultRelease = {
     appName: 'Zest Tournament - Free Fire Esports',
     androidVersion: 'v1.4.2',
-    androidFileSize: '42.5 MB',
-    androidFileName: 'zest-tournament-v1.4.2.apk',
-    androidDownloadUrl: 'https://pub-3a330a31e4904c16b9e08700204ffc7c.r2.dev/zest-tournament-v1.4.2.apk',
+    androidFileSize: '7.7 MB',
+    androidFileName: 'ZEST_TOURNAMENT_APP.apk',
+    androidDownloadUrl: 'https://pub-3a330a31e4904c16b9e08700204ffc7c.r2.dev/ZEST_TOURNAMENT_APP.apk',
     
     iosVersion: 'v1.4.2',
     iosFileSize: '48.0 MB',
@@ -262,10 +262,10 @@ const AppUploader = (function () {
   }
 
   function triggerAndroidDownload(release) {
-    let targetUrl = release.androidBlobUrl || release.androidDownloadUrl || release.downloadUrl || 'https://pub-3a330a31e4904c16b9e08700204ffc7c.r2.dev/zest-tournament-v1.4.2.apk';
+    let targetUrl = release.androidBlobUrl || release.androidDownloadUrl || release.downloadUrl || 'https://pub-3a330a31e4904c16b9e08700204ffc7c.r2.dev/ZEST_TOURNAMENT_APP.apk';
     const link = document.createElement('a');
     link.href = targetUrl;
-    link.download = release.androidFileName || 'zest-tournament-app.apk';
+    link.download = release.androidFileName || 'ZEST_TOURNAMENT_APP.apk';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
