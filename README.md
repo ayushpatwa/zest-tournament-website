@@ -19,7 +19,7 @@ The website is protected so that **regular visitors cannot upload or modify anyt
 
 - **Visitor Experience**:
   - **3-Platform Download System**:
-    - 🤖 **Android**: Direct `.apk` download with live version (`v1.4.2`) and file size (`42.5 MB`).
+    - 🤖 **Android**: Direct `.apk` download with live version (`v1.4.2`) and file size (`7.7 MB`).
     - 🍎 **iOS**: Instant iPhone/iPad Web App install guide via Safari Share sheet.
     - 🌐 **Directly on Browser**: 0-second setup Instant Web Arena to register for Free Fire custom rooms directly in Chrome/Safari/Edge.
   - **QR Code Scanner** for instant mobile downloads.

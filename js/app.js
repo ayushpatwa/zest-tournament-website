@@ -69,11 +69,12 @@ const AppUI = (function () {
     });
   }
 
-  function openQRModal() {
+  async function openQRModal() {
     const modal = document.getElementById('qr-modal');
     const container = document.getElementById('qr-modal-content');
     if (modal && container && window.AppUploader) {
-      window.AppUploader.renderQRCode('assets/downloads/zest-tournament-v1.4.2.apk', container);
+      const release = await window.AppUploader.getCurrentRelease();
+      window.AppUploader.renderQRCode(release.androidDownloadUrl || 'https://pub-3a330a31e4904c16b9e08700204ffc7c.r2.dev/ZEST_TOURNAMENT_APP.apk', container);
       modal.classList.add('active');
     }
   }

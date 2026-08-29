@@ -109,33 +109,44 @@ const AppUploader = (function () {
     
     let release = { ...defaultRelease };
 
-    // 1. Fetch live global configuration from Cloudflare Worker API
+    // 1. Fetch live global configuration from Cloudflare Worker API (Primary source of truth)
     try {
       const res = await fetch(`${CLOUDFLARE_API_URL}?t=${Date.now()}`);
       if (res.ok) {
         const cloudData = await res.json();
-        if (cloudData && typeof cloudData === 'object') {
+        if (cloudData && typeof cloudData === 'object' && cloudData.androidDownloadUrl) {
           release = { ...release, ...cloudData };
+          cachedRelease = release;
+          localStorage.setItem('zest_release_meta', JSON.stringify(release));
+          return release;
         }
       }
     } catch (cfErr) {
-      console.warn('Cloudflare Worker API fetch skipped, trying static config:', cfErr);
-      // Fallback to static release.json
-      try {
-        const resStatic = await fetch('assets/config/release.json?t=' + Date.now());
-        if (resStatic.ok) {
-          const jsonStatic = await resStatic.json();
-          release = { ...release, ...jsonStatic };
-        }
-      } catch (e) {}
+      console.warn('Cloudflare Worker API fetch notice, trying static release.json:', cfErr);
     }
 
-    // 2. Overlay local storage if available
+    // 2. Fetch static release.json fallback
+    try {
+      const resStatic = await fetch('assets/config/release.json?t=' + Date.now());
+      if (resStatic.ok) {
+        const jsonStatic = await resStatic.json();
+        if (jsonStatic && jsonStatic.androidDownloadUrl) {
+          release = { ...release, ...jsonStatic };
+          cachedRelease = release;
+          localStorage.setItem('zest_release_meta', JSON.stringify(release));
+          return release;
+        }
+      }
+    } catch (e) {}
+
+    // 3. Fallback to local storage only if network is offline
     const local = localStorage.getItem('zest_release_meta');
     if (local) {
       try {
         const localObj = JSON.parse(local);
-        release = { ...release, ...localObj };
+        if (localObj && localObj.androidDownloadUrl && !localObj.androidDownloadUrl.includes('zest-tournament-v1.4.2.apk')) {
+          release = { ...release, ...localObj };
+        }
       } catch (e) {}
     }
 
@@ -246,7 +257,7 @@ const AppUploader = (function () {
       el.textContent = release.androidVersion || release.version || 'v1.4.2';
     });
     document.querySelectorAll('.app-size-val').forEach(el => {
-      el.textContent = release.androidFileSize || release.fileSize || '42.5 MB';
+      el.textContent = release.androidFileSize || release.fileSize || '7.7 MB';
     });
     document.querySelectorAll('.app-downloads-val').forEach(el => {
       el.textContent = (release.downloadCount || 15420).toLocaleString() + '+';
@@ -263,12 +274,9 @@ const AppUploader = (function () {
 
   function triggerAndroidDownload(release) {
     let targetUrl = release.androidBlobUrl || release.androidDownloadUrl || release.downloadUrl || 'https://pub-3a330a31e4904c16b9e08700204ffc7c.r2.dev/ZEST_TOURNAMENT_APP.apk';
-    const link = document.createElement('a');
-    link.href = targetUrl;
-    link.download = release.androidFileName || 'ZEST_TOURNAMENT_APP.apk';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    
+    // Direct browser navigation triggers immediate file download without popup blockers
+    window.location.href = targetUrl;
 
     release.downloadCount = (release.downloadCount || 15420) + 1;
     localStorage.setItem('zest_release_meta', JSON.stringify(release));
