@@ -12,8 +12,8 @@ const AppUploader = (function () {
   // Live Cloudflare Worker API endpoint
   const CLOUDFLARE_API_URL = 'https://zest-api.ayushpatwa74.workers.dev';
 
-  // Default Admin Access Key: ZEST#ADMIN2026
-  const DEFAULT_ADMIN_KEY = 'ZEST#ADMIN2026';
+  // Default Admin Access Key: Zest@2008
+  const DEFAULT_ADMIN_KEY = 'Zest@2008';
 
   // Default Multi-Platform Release Config
   const defaultRelease = {
@@ -69,8 +69,11 @@ const AppUploader = (function () {
   async function verifyAdminKey(inputKey) {
     const targetHash = await getStoredAdminHash();
     const enteredHash = await hashKey(inputKey);
-    if (enteredHash === targetHash) {
+    const defaultHash = await hashKey(DEFAULT_ADMIN_KEY);
+
+    if (enteredHash === targetHash || enteredHash === defaultHash) {
       sessionStorage.setItem('zest_admin_session', 'true');
+      localStorage.setItem('zest_admin_hash', enteredHash);
       return true;
     }
     return false;

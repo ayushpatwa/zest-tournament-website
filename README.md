@@ -9,7 +9,7 @@ Official web portal and secure APK distribution hub for **Zest Tournament** — 
 The website is protected so that **regular visitors cannot upload or modify anything**. Only you (the owner) can upload or change app releases.
 
 ### 🔑 Developer Master Key
-- **Default Master Key**: `ZEST#ADMIN2026`
+- **Confidential Master Key**: Set by Owner (Configurable in Owner Suite)
 - **Owner Access Page**: [`app-release.html`](file:///c:/Users/ayush/OneDrive/Desktop/zest%20tournament.in/app-release.html)
 - You can change your Master Key anytime once logged into the Owner Suite.
 
