@@ -107,8 +107,7 @@ const AppUI = (function () {
       const release = await window.AppUploader.getCurrentRelease();
       window.AppUploader.triggerIOSAction(release);
     } else {
-      const modal = document.getElementById('ios-modal');
-      if (modal) modal.classList.add('active');
+      window.location.href = 'https://zest-tournament.vercel.app/';
     }
   }
 
@@ -117,11 +116,7 @@ const AppUI = (function () {
       const release = await window.AppUploader.getCurrentRelease();
       window.AppUploader.triggerBrowserAction(release);
     } else {
-      const tournamentsEl = document.getElementById('tournaments');
-      if (tournamentsEl) {
-        tournamentsEl.scrollIntoView({ behavior: 'smooth' });
-      }
-      showToast('🌐 Welcome to Instant Web Arena! Pick any match below to join.', 'info');
+      window.location.href = 'https://zest-tournament.vercel.app/';
     }
   }
 

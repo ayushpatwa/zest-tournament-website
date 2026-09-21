@@ -26,9 +26,9 @@ const AppUploader = (function () {
     iosVersion: 'v1.4.2',
     iosFileSize: '48.0 MB',
     iosFileName: 'zest-tournament-v1.4.2.ipa',
-    iosDownloadUrl: '',
+    iosDownloadUrl: 'https://zest-tournament.vercel.app/',
     
-    browserPlayUrl: '#tournaments',
+    browserPlayUrl: 'https://zest-tournament.vercel.app/',
     
     releaseDate: 'August 2026',
     downloadCount: 15420,
@@ -291,42 +291,19 @@ const AppUploader = (function () {
   }
 
   function triggerIOSAction(release) {
-    if (release.iosBlobUrl) {
-      const link = document.createElement('a');
-      link.href = release.iosBlobUrl;
-      link.download = release.iosFileName || 'zest-tournament-ios.ipa';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      if (window.AppUI && window.AppUI.showToast) {
-        window.AppUI.showToast(`Downloading iOS Package (${release.iosVersion || 'v1.4.2'})...`, 'success');
-      }
-    } else if (release.iosDownloadUrl && release.iosDownloadUrl.trim().length > 0 && !release.iosDownloadUrl.startsWith('#')) {
-      window.open(release.iosDownloadUrl, '_blank');
-      if (window.AppUI && window.AppUI.showToast) {
-        window.AppUI.showToast('🍎 Opening iOS App Store / TestFlight portal...', 'info');
-      }
-    } else {
-      if (window.AppUI && window.AppUI.openIOSModal) {
-        const modal = document.getElementById('ios-modal');
-        if (modal) modal.classList.add('active');
-      }
-    }
+    const targetUrl = (release && release.iosDownloadUrl && release.iosDownloadUrl.trim().length > 0 && !release.iosDownloadUrl.startsWith('#'))
+      ? release.iosDownloadUrl
+      : 'https://zest-tournament.vercel.app/';
+    
+    window.location.href = targetUrl;
   }
 
   function triggerBrowserAction(release) {
-    const target = release.browserPlayUrl || '#tournaments';
-    if (target.startsWith('http://') || target.startsWith('https://')) {
-      window.open(target, '_blank');
-    } else {
-      const el = document.querySelector(target) || document.getElementById('tournaments');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-      }
-      if (window.AppUI && window.AppUI.showToast) {
-        window.AppUI.showToast('🌐 Instant Web Arena Active! Pick any Free Fire match below to play.', 'info');
-      }
-    }
+    const targetUrl = (release && release.browserPlayUrl && release.browserPlayUrl.trim().length > 0 && !release.browserPlayUrl.startsWith('#'))
+      ? release.browserPlayUrl
+      : 'https://zest-tournament.vercel.app/';
+    
+    window.location.href = targetUrl;
   }
 
   function renderQRCode(targetUrl, containerEl) {
