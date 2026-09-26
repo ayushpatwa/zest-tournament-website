@@ -187,8 +187,8 @@
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                 <div class="form-group">
-                  <label class="form-label">Android Version (e.g. v1.4.8)</label>
-                  <input type="text" id="input-android-version" class="form-control" placeholder="v1.4.8" required />
+                  <label class="form-label">Android Version (e.g. v1.4.9)</label>
+                  <input type="text" id="input-android-version" class="form-control" placeholder="v1.4.9" required />
                 </div>
                 <div class="form-group">
                   <label class="form-label">Android File Size (e.g. 6.4 MB)</label>
@@ -382,12 +382,12 @@
         const current = await AppUploader.getCurrentRelease();
         
         // Android fields
-        document.getElementById('input-android-version').value = current.androidVersion || current.version || 'v1.4.8';
+        document.getElementById('input-android-version').value = current.androidVersion || current.version || 'v1.4.9';
         document.getElementById('input-android-size').value = current.androidFileSize || current.fileSize || '6.4 MB';
         document.getElementById('input-android-url').value = current.androidDownloadUrl || current.downloadUrl || 'https://pub-3a330a31e4904c16b9e08700204ffc7c.r2.dev/ZEST_TOURNAMENT_APP.apk';
         
         // iOS fields
-        document.getElementById('input-ios-version').value = current.iosVersion || 'v1.4.2';
+        document.getElementById('input-ios-version').value = current.iosVersion || 'v1.4.9';
         document.getElementById('input-ios-size').value = current.iosFileSize || '48.0 MB';
         document.getElementById('input-ios-url').value = current.iosDownloadUrl || 'https://zest-tournament.vercel.app/';
 
